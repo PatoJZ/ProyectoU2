@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/Patricio/Documents/VSC/ProyectoU2",
-      "program": "c:/Users/Patricio/Documents/VSC/ProyectoU2/build/Debug/outDebug",
+      "cwd": "c:/Users/Usuario/Documents/Visual/ProyectoU2",
+      "program": "c:/Users/Usuario/Documents/Visual/ProyectoU2/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
