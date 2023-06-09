@@ -14,20 +14,20 @@ struct Guardian
     int PowerLevel;
     string MainMaster;
     string Village;
-    vector<Guardian*> aprendices;
+    vector<Guardian *> aprendices;
 };
 struct Village
 {
     string Name;
     string MainMaster;
-    vector<Village> villasConectadas;
+    vector<Village *> villasConectadas;
 };
 
 class GuardiansTree
 {
 public:
     GuardiansTree() : root(nullptr) {}
-    vector<Guardian*>& getGuardianes() 
+    vector<Guardian *> getGuardians()
     {
         return guardians;
     }
@@ -79,6 +79,25 @@ public:
         }
         file.close();
     }
+    void loadVillagesFromFile(const string &filename)
+    {
+        ifstream file(filename);
+        if (!file)
+        {
+            cerr << "Failed to open file: " << filename << endl;
+            return;
+        }
+        string line;
+
+        // Leer el archivo y cargar las villas
+        vector<Village *> loadedVillages = cargarVillas(filename);
+
+        // Actualizar el vector villages
+        villages = loadedVillages;
+        imprimirVillas(villages, guardians);
+
+        file.close();
+    }
 
     void printGuardians()
     {
@@ -86,9 +105,10 @@ public:
     }
 
 private:
-    vector<Guardian*> guardians;
+    vector<Guardian *> guardians;
+    vector<Village *> villages;
     Guardian *root;
-    
+
     Guardian *findGuardian(const string &name)
     {
         for (Guardian *guardian : guardians)
@@ -131,80 +151,69 @@ private:
             }
         }
     }
-    vector<Village> cargarVillas(const string &nombreArchivo,vector<Guardian>& guardianes)
+    vector<Village *> cargarVillas(const string &filename)
     {
-        vector<Village> villas;
-        ifstream archivo(nombreArchivo);
-        if (archivo.is_open())
+        vector<Village *> updatedVillages;
+        ifstream file(filename);
+        if (!file)
         {
+            cerr << "Failed to open file: " << filename << endl;
+            return updatedVillages;
+        }
+        string line;
 
-            string linea;
-            while (getline(archivo, linea))
+        while (getline(file, line))
+        {
+            istringstream iss(line);
+            string villageName, neighborCity;
+            getline(iss, villageName, ',');
+            getline(iss, neighborCity);
+
+            Village *village = new Village;
+            village->Name = villageName;
+            village->MainMaster = "";
+    
+            // Buscar el MainMaster correspondiente en el vector de guardianes
+            for (Guardian *guardian : guardians)
             {
-                if (!linea.empty())
+                if (guardian->Village == villageName)
                 {
-                    istringstream tokenStream(linea);
-                    string token;
-                    vector<string> tokens;
-                    Village villa;
-
-                    getline(tokenStream, villa.Name, ',');
-
-                    while (getline(tokenStream, token, ','))
-                    {
-                        Village villaConectada;
-                        villaConectada.Name = token;
-                        villa.villasConectadas.push_back(villaConectada);
-                    }
-                    for (Guardian &guardian : guardianes)
-                    {
-                        if (guardian.Name == villa.MainMaster)
-                        {
-                            guardian.MainMaster = villa.Name;
-                            break;
-                        }
-                    }
-
-                    villas.push_back(villa);
+                    village->MainMaster = guardian->Name;
+                    break;
                 }
             }
-
-            cout << "Villas cargadas exitosamente desde el archivo: " << nombreArchivo << endl;
+            updatedVillages.push_back(village);
         }
-        else
-        {
-            cerr << "No se pudo abrir el archivo: " << nombreArchivo << endl;
-        }
+        file.close();
 
-        archivo.close();
-
-        return villas;
+        villages = updatedVillages;
+        return updatedVillages;
     }
-    void imprimirVillas(const vector<Village> &villas, const vector<Guardian> &guardianes)
+    void imprimirVillas(const vector<Village *> &villas, vector<Guardian *> &updatedGuardians, unsigned int indent = 0)
     {
-        for (const Village &villa : villas)
+        for (const Village *villa : villas)
         {
-            cout << "Nombre de la villa: " << villa.Name << endl;
-            cout << "Maestro principal: " << villa.MainMaster << endl;
+            cout << string(indent, ' ') << "Nombre de la villa: " << villa->Name << endl;
+            cout << string(indent, ' ') << "Maestro principal: " << villa->MainMaster << endl;
 
-            if (!villa.villasConectadas.empty())
+            if (!villa->villasConectadas.empty())
             {
-                cout << "Villas conectadas: ";
-                for (const Village &villaConectada : villa.villasConectadas)
+                cout << string(indent, ' ') << "Villas conectadas: ";
+                for (const Village *villaConectada : villa->villasConectadas)
                 {
-                    cout << villaConectada.Name << " ";
+                    cout << villaConectada->Name << " ";
                 }
                 cout << endl;
             }
 
-            cout << "Guardianes asociados:" << endl;
-            for (const Guardian &guardian : guardianes)
+            cout << string(indent, ' ') << "Guardianes asociados:" << endl;
+            for (const Guardian *guardian : updatedGuardians)
             {
-                if (guardian.MainMaster == villa.Name)
+                if (guardian->MainMaster == villa->MainMaster)
                 {
-                    cout << "Nombre: " << guardian.Name << endl;
-                    cout << "Nivel de poder: " << guardian.PowerLevel << endl;
-                    cout << "Maestro principal: " << guardian.MainMaster << endl;
+                    cout << string(indent + 4, ' ') << "Nombre: " << guardian->Name << endl;
+                    cout << string(indent + 4, ' ') << "Nivel de poder: " << guardian->PowerLevel << endl;
+                    cout << string(indent + 4, ' ') << "Maestro principal: " << guardian->MainMaster << endl;
                     cout << endl;
                 }
             }
@@ -212,22 +221,20 @@ private:
             cout << endl;
         }
     }
-   
 };
 
 int main()
 {
-    GuardiansTree guardianes;
-   
-    //vector<Village> villas;
+    GuardiansTree guardians;
 
     // Cargar guardianes desde un archivo
+    guardians.loadGuardiansFromFile("guardianes.csv");
 
-    string nombreArchivo2 = "villas.csv";
-    guardianes.loadGuardiansFromFile("guardianes.csv");
-    guardianes.cargarVillas(nombreArchivo2,);
     // Mostrar los guardianes cargados
-    guardianes.printGuardians();
+    guardians.printGuardians();
+
+    // Cargar villas desde un archivo y actualizar los main master de los guardianes
+    guardians.loadVillagesFromFile("villas.csv");
 
     return 0;
 }
