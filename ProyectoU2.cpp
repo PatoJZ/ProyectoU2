@@ -154,6 +154,7 @@ private:
     vector<Village *> cargarVillas(const string &filename)
     {
         vector<Village *> updatedVillages;
+        unordered_map<string, Village *> villageMap; // Mapa para evitar duplicación de villas
         ifstream file(filename);
         if (!file)
         {
@@ -169,10 +170,21 @@ private:
             getline(iss, villageName, ',');
             getline(iss, neighborCity);
 
-            Village *village = new Village;
-            village->Name = villageName;
-            village->MainMaster = "";
-    
+            Village *village = nullptr;
+            auto villageIter = villageMap.find(villageName);
+            if (villageIter != villageMap.end())
+            {
+                village = villageIter->second; // Recuperar la instancia existente
+            }
+            else
+            {
+                village = new Village; // Crear nueva instancia de la villa
+                village->Name = villageName;
+                village->MainMaster = "";
+                villageMap[villageName] = village;  // Agregar al mapa
+                updatedVillages.push_back(village); // Agregar al vector de villas actualizadas
+            }
+
             // Buscar el MainMaster correspondiente en el vector de guardianes
             for (Guardian *guardian : guardians)
             {
@@ -182,7 +194,12 @@ private:
                     break;
                 }
             }
-            updatedVillages.push_back(village);
+            auto neighborIter = villageMap.find(neighborCity);
+            if (neighborIter != villageMap.end())
+            {
+                Village *neighbor = neighborIter->second;
+                village->villasConectadas.push_back(neighbor);
+            }
         }
         file.close();
 
