@@ -103,6 +103,145 @@ public:
     {
         printGuardian(root, 0);
     }
+    void printVillages()
+    {
+        imprimirVillas(villages, guardians);
+    }
+    string selectApprentice()
+    {
+        cout << "Lista de aprendices generales:" << endl;
+        for (const Guardian *guardian : guardians)
+        {
+            if (guardian->Name != "Stormheart")
+            {
+                cout << "- " << guardian->Name << endl;
+                cout << "Power level: " << guardian->PowerLevel << endl;
+            }
+        }
+
+        string name;
+        cout << "Ingrese el nombre del aprendiz: ";
+        getline(cin, name);
+
+        Guardian *selectedApprentice = findGuardian(name);
+        if (selectedApprentice == nullptr)
+        {
+            cout << "Aprendiz no encontrado: " << name << endl;
+            return "";
+        }
+        else
+        {
+            cout << "Aprendiz encontrado: " << selectedApprentice->Name << " fue seleccionado" << endl;
+            return selectedApprentice->Name;
+        }
+
+        Guardian *master = findGuardian(selectedApprentice->MainMaster);
+        if (master == nullptr)
+        {
+            cout << "Master not found for apprentice: " << name << endl;
+            return "";
+        }
+
+        // Eliminar el aprendiz de la lista de aprendices del maestro
+        for (size_t i = 0; i < master->aprendices.size(); i++)
+        {
+            if (master->aprendices[i]->Name == name)
+            {
+                master->aprendices.erase(master->aprendices.begin() + static_cast<vector<Guardian *>::difference_type>(i));
+                break;
+            }
+        }
+
+        // Encontrar el siguiente aprendiz con mayor poder
+        Guardian *nextApprentice = nullptr;
+        int maxPowerLevel = numeric_limits<int>::min();
+
+        for (Guardian *apprentice : master->aprendices)
+        {
+            if (apprentice->PowerLevel > maxPowerLevel)
+            {
+                maxPowerLevel = apprentice->PowerLevel;
+                nextApprentice = apprentice;
+            }
+        }
+
+        // Actualizar el MainMaster del aprendiz seleccionado
+        selectedApprentice->MainMaster = "";
+
+        // Si hay un siguiente aprendiz, asignarlo como el nuevo MainMaster
+        if (nextApprentice != nullptr)
+        {
+            selectedApprentice->MainMaster = nextApprentice->Name;
+        }
+
+        // Actualizar la jerarquía de maestros y aprendices
+        updateTreeStructure();
+    }
+    void travelBetweenVillages(const string &selectedApprentice)
+    {
+        // Obtener la aldea actual del aprendiz seleccionado
+        string currentVillage;
+        for (const Guardian *guardian : guardians)
+        {
+            if (guardian->Name == selectedApprentice)
+            {
+                currentVillage = guardian->Village;
+                break;
+            }
+        }
+
+        if (currentVillage.empty())
+        {
+            cout << "El aprendiz seleccionado no tiene una aldea asignada." << endl;
+            return;
+        }
+
+        cout << "Viajando desde " << currentVillage << "..." << endl;
+
+        while (true)
+        {
+            // Mostrar las aldeas adyacentes disponibles para viajar
+            vector<string> adjacentVillages = getAdjacentVillages(currentVillage);
+            cout << "Aldeas disponibles para viajar desde " << currentVillage << ":" << endl;
+            for (const string &adjacentVillage : adjacentVillages)
+            {
+                cout << "- " << adjacentVillage << endl;
+            }
+
+            // Solicitar la aldea a la que desea viajar el usuario
+            cout << "Ingresa el nombre de la aldea a la que deseas viajar (o 'volver' para regresar a la aldea anterior): ";
+            string destinationVillage;
+            getline(cin, destinationVillage);
+
+            // Verificar si el usuario desea regresar a la aldea anterior
+            if (destinationVillage == "volver")
+            {
+                cout << "Regresando a la aldea anterior..." << endl;
+                return;
+            }
+
+            // Verificar si la aldea ingresada es adyacente a la aldea actual
+            bool isValidDestination = false;
+            for (const string &adjacentVillage : adjacentVillages)
+            {
+                if (adjacentVillage == destinationVillage)
+                {
+                    isValidDestination = true;
+                    break;
+                }
+            }
+
+            if (isValidDestination)
+            {
+                cout << "Viajando desde " << currentVillage << " hacia " << destinationVillage << "..." << endl;
+                currentVillage = destinationVillage;
+            }
+            else
+            {
+                cout << "La aldea ingresada no es una opción válida para viajar desde " << currentVillage << "." << endl;
+            }
+        }
+    }
 
 private:
     vector<Guardian *> guardians;
@@ -238,6 +377,25 @@ private:
             cout << endl;
         }
     }
+    // Función para obtener las aldeas adyacentes a una aldea dada
+    vector<string> getAdjacentVillages(const string &village)
+    {
+        vector<string> adjacentVillages;
+
+        for (const Village *villageObj : villages)
+        {
+            if (villageObj->Name == village)
+            {
+                for (const Village *adjacentVillage : villageObj->villasConectadas)
+                {
+                    adjacentVillages.push_back(adjacentVillage->Name);
+                }
+                break;
+            }
+        }
+
+        return adjacentVillages;
+    }
 };
 
 int main()
@@ -252,6 +410,44 @@ int main()
 
     // Cargar villas desde un archivo y actualizar los main master de los guardianes
     guardians.loadVillagesFromFile("villas.csv");
+
+    int opcion;
+    string selectedApprentice;
+    do
+    {
+        // Mostrar el menú
+        cout << "----- Menú Principal -----" << endl;
+        cout << "1. Seleccionar aprendiz" << endl;
+        cout << "2. Mostrar guardianes y aldeas" << endl;
+        cout << "3. Viajar entre aldeas" << endl;
+        cout << "0. Salir" << endl;
+        cout << "Ingrese el número de la opción deseada: ";
+
+        cin >> opcion;
+
+        switch (opcion)
+        {
+        case 1:
+            selectedApprentice = guardians.selectApprentice();
+            break;
+        case 2:
+            guardians.printGuardians();
+            guardians.printVillages();
+            break;
+        case 3:
+            guardians.travelBetweenVillages(selectedApprentice);
+            break;
+        case 0:
+            cout << "Saliendo del programa..." << endl;
+            return 0;
+        default:
+            cout << "Opción inválida. Por favor, ingrese un número válido." << endl;
+            break;
+        }
+
+        cout << endl;
+
+    } while (opcion != 0);
 
     return 0;
 }
