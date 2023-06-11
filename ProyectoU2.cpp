@@ -121,6 +121,7 @@ public:
 
         string name;
         cout << "Ingrese el nombre del aprendiz: ";
+        cin.ignore();
         getline(cin, name);
 
         Guardian *selectedApprentice = findGuardian(name);
@@ -176,11 +177,13 @@ public:
 
         // Actualizar la jerarquía de maestros y aprendices
         updateTreeStructure();
+        return "";
     }
     void travelBetweenVillages(const string &selectedApprentice)
     {
         // Obtener la aldea actual del aprendiz seleccionado
         string currentVillage;
+        string destinationVillage;
         for (const Guardian *guardian : guardians)
         {
             if (guardian->Name == selectedApprentice)
@@ -196,6 +199,7 @@ public:
             return;
         }
 
+        cout << "Viajando con " << selectedApprentice << endl;
         cout << "Viajando desde " << currentVillage << "..." << endl;
 
         while (true)
@@ -203,43 +207,121 @@ public:
             // Mostrar las aldeas adyacentes disponibles para viajar
             vector<string> adjacentVillages = getAdjacentVillages(currentVillage);
             cout << "Aldeas disponibles para viajar desde " << currentVillage << ":" << endl;
-            for (const string &adjacentVillage : adjacentVillages)
+
+            // Mostrar las opciones numeradas para cada aldea adyacente
+            for (size_t i = 0; i < adjacentVillages.size(); ++i)
             {
-                cout << "- " << adjacentVillage << endl;
+                cout << i + 1 << ". " << adjacentVillages[i] << endl;
             }
+            cout << "0. Volver a la aldea anterior" << endl;
 
-            // Solicitar la aldea a la que desea viajar el usuario
-            cout << "Ingresa el nombre de la aldea a la que deseas viajar (o 'volver' para regresar a la aldea anterior): ";
-            string destinationVillage;
-            getline(cin, destinationVillage);
+            // Solicitar la opcion al usuario
+            int option;
+            cout << "Selecciona el numero de la aldea a la que deseas viajar: ";
+            cin >> option;
 
-            // Verificar si el usuario desea regresar a la aldea anterior
-            if (destinationVillage == "volver")
+            // Verificar la opcion seleccionada
+            if (option == 0)
             {
                 cout << "Regresando a la aldea anterior..." << endl;
                 return;
             }
-
-            // Verificar si la aldea ingresada es adyacente a la aldea actual
-            bool isValidDestination = false;
-            for (const string &adjacentVillage : adjacentVillages)
+            else if (option >= 1 && option <= static_cast<int>(adjacentVillages.size()))
             {
-                if (adjacentVillage == destinationVillage)
-                {
-                    isValidDestination = true;
-                    break;
-                }
-            }
-
-            if (isValidDestination)
-            {
+                destinationVillage = adjacentVillages[static_cast<size_t>(option - 1)];
                 cout << "Viajando desde " << currentVillage << " hacia " << destinationVillage << "..." << endl;
+
+                // Actualizar los puntos de poder por llegar a la aldea
+                Guardian *selectedGuardian = findGuardian(selectedApprentice);
+                selectedGuardian->PowerLevel += 1;
+
+                // Mostrar los oponentes en la aldea y realizar enfrentamientos
+                vector<Guardian *> opponents = getOpponents(destinationVillage);
+                if (!opponents.empty())
+                {
+                    encounterOpponents(selectedGuardian, opponents);
+                }
+
                 currentVillage = destinationVillage;
             }
             else
             {
-                cout << "La aldea ingresada no es una opción válida para viajar desde " << currentVillage << "." << endl;
+                cout << "Opcion invalida. Por favor, selecciona un numero valido." << endl;
             }
+
+            // Limpiar el buffer de entrada
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+    }
+    void encounterOpponents(Guardian *selectedGuardian, const vector<Guardian *> &opponents)
+    {
+        cout << "Enfrentando a los oponentes..." << endl;
+
+        // Mostrar los oponentes disponibles para enfrentar
+        cout << "Oponentes disponibles:" << endl;
+        for (size_t i = 0; i < opponents.size(); i++)
+        {
+            cout << i + 1 << ". " << opponents[i]->Name << endl;
+            cout << "Poder: " << opponents[i]->PowerLevel << endl;
+        }
+
+        // Sugerir enfrentarse al oponente con menor nivel de poder
+        size_t  minPowerIndex = 0;
+        int minPower = opponents[0]->PowerLevel;
+        for (size_t i = 1; i < opponents.size()- 1; i++)
+        {
+            if (opponents[i]->PowerLevel < minPower)
+            {
+                minPower = opponents[i]->PowerLevel;
+                minPowerIndex = i;
+            }
+        }
+        cout << "Sugerencia: Enfrentarse a " << opponents[static_cast<size_t>(minPowerIndex)]->Name << " (Poder: " << minPower << ")" << endl;
+
+        // Solicitar al usuario el numero del oponente al que desea enfrentarse
+        vector<Guardian*>::size_type chosenOpponent;
+        cout << "Ingrese el numero del oponente al que desea enfrentarse: ";
+        cin >> chosenOpponent;
+
+        // Verificar si la opcion seleccionada es valida
+        if (chosenOpponent < 1 || chosenOpponent > opponents.size())
+        {
+            cout << "Opcion invalida. Fin del enfrentamiento." << endl;
+            return;
+        }
+
+        // Obtener el oponente seleccionado
+        Guardian *opponent = opponents[chosenOpponent - 1];
+
+        // Calcular las posibilidades de victoria
+        int selectedPower = selectedGuardian->PowerLevel;
+        int opponentPower = opponent->PowerLevel;
+        double winProbability = static_cast<double>(selectedPower) / (selectedPower + opponentPower) * 100.0;
+
+        // Realizar el enfrentamiento
+        cout << "Enfrentandose a " << opponent->Name << "..." << endl;
+
+        // Tirar un dado para determinar el resultado del enfrentamiento
+        int diceRoll = rand() % 100 + 1; // Generar un numero aleatorio entre 1 y 100
+
+        // Verificar el resultado del dado comparando con las posibilidades de victoria
+        if (diceRoll <= winProbability)
+        {
+            cout << "¡Has ganado el enfrentamiento! Obtienes ";
+            if (opponent->Name == selectedGuardian->MainMaster)
+            {
+                cout << "2 puntos." << endl;
+                selectedGuardian->PowerLevel += 2;
+            }
+            else
+            {
+                cout << "1 punto." << endl;
+                selectedGuardian->PowerLevel += 1;
+            }
+        }
+        else
+        {
+            cout << "Has perdido el enfrentamiento. No obtienes puntos." << endl;
         }
     }
 
@@ -293,7 +375,7 @@ private:
     vector<Village *> cargarVillas(const string &filename)
     {
         vector<Village *> updatedVillages;
-        unordered_map<string, Village *> villageMap; // Mapa para evitar duplicación de villas
+        unordered_map<string, Village *> villageMap; // Mapa para evitar duplicacion de villas
         ifstream file(filename);
         if (!file)
         {
@@ -333,16 +415,35 @@ private:
                     break;
                 }
             }
+
+            // Verificar y agregar vecino si existe en el mapa
             auto neighborIter = villageMap.find(neighborCity);
             if (neighborIter != villageMap.end())
             {
                 Village *neighbor = neighborIter->second;
                 village->villasConectadas.push_back(neighbor);
+
+                // Agregar la conexion en sentido contrario (vecino a aldea)
+                neighbor->villasConectadas.push_back(village);
+            }
+            else
+            {
+                // Si el vecino no existe en el mapa, crear una nueva instancia y agregarla al mapa y al vector
+                Village *newNeighbor = new Village;
+                newNeighbor->Name = neighborCity;
+                newNeighbor->MainMaster = "";
+                villageMap[neighborCity] = newNeighbor;
+                updatedVillages.push_back(newNeighbor);
+
+                // Agregar el nuevo vecino a la lista de vecinos de la villa actual
+                village->villasConectadas.push_back(newNeighbor);
+
+                // Agregar la conexion en sentido contrario (vecino a aldea)
+                newNeighbor->villasConectadas.push_back(village);
             }
         }
         file.close();
 
-        villages = updatedVillages;
         return updatedVillages;
     }
     void imprimirVillas(const vector<Village *> &villas, vector<Guardian *> &updatedGuardians, unsigned int indent = 0)
@@ -357,7 +458,7 @@ private:
                 cout << string(indent, ' ') << "Villas conectadas: ";
                 for (const Village *villaConectada : villa->villasConectadas)
                 {
-                    cout << villaConectada->Name << " ";
+                    cout << villaConectada->Name << "-";
                 }
                 cout << endl;
             }
@@ -377,7 +478,7 @@ private:
             cout << endl;
         }
     }
-    // Función para obtener las aldeas adyacentes a una aldea dada
+    // Funcion para obtener las aldeas adyacentes a una aldea dada
     vector<string> getAdjacentVillages(const string &village)
     {
         vector<string> adjacentVillages;
@@ -395,6 +496,38 @@ private:
         }
 
         return adjacentVillages;
+    }
+
+    vector<Guardian *> getOpponents(const string &villageName)
+    {
+        vector<Guardian *> opponents;
+        for (Guardian *guardian : guardians)
+        {
+            if (guardian->Village == villageName)
+            {
+                opponents.push_back(guardian);
+            }
+        }
+        return opponents;
+    }
+    int calculateWinProbability(int myPower, int opponentPower)
+    {
+        if (myPower == opponentPower)
+        {
+            return 50; // Misma cantidad de poder, 50% de posibilidades de ganar
+        }
+        else if (myPower > opponentPower)
+        {
+            int difference = myPower - opponentPower;
+            int winProbability = 50 + difference; // Aumenta las posibilidades de ganar por la diferencia de poder
+            return min(winProbability, 100);      // Limita el maximo de posibilidades al 100%
+        }
+        else
+        {
+            int difference = opponentPower - myPower;
+            int winProbability = 50 - difference; // Disminuye las posibilidades de ganar por la diferencia de poder
+            return max(winProbability, 0);        // Limita el mínimo de posibilidades al 0%
+        }
     }
 };
 
@@ -415,13 +548,13 @@ int main()
     string selectedApprentice;
     do
     {
-        // Mostrar el menú
-        cout << "----- Menú Principal -----" << endl;
+        // Mostrar el menu
+        cout << "----- Menu Principal -----" << endl;
         cout << "1. Seleccionar aprendiz" << endl;
         cout << "2. Mostrar guardianes y aldeas" << endl;
-        cout << "3. Viajar entre aldeas" << endl;
+        cout << "3. Empezar viaje" << endl;
         cout << "0. Salir" << endl;
-        cout << "Ingrese el número de la opción deseada: ";
+        cout << "Ingrese el numero de la opcion deseada: ";
 
         cin >> opcion;
 
@@ -441,7 +574,7 @@ int main()
             cout << "Saliendo del programa..." << endl;
             return 0;
         default:
-            cout << "Opción inválida. Por favor, ingrese un número válido." << endl;
+            cout << "Opcion invalida. Por favor, ingrese un numero valido." << endl;
             break;
         }
 
