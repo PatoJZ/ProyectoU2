@@ -279,7 +279,7 @@ public:
         if (selectedApprentice.empty())
         {
             cout << "--------------------------------------------------------------------" << endl;
-            cout << "No se han seleccionado algun aprendiz." << endl;
+            cout << "No se ha seleccionado algun aprendiz." << endl;
             return;
         }
 
