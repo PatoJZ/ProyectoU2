@@ -23,15 +23,38 @@ struct Village
     string MainMaster;
     vector<Village *> villasConectadas;
 };
-
+struct CombatHistory
+{
+    string opponentName;
+    bool victory;
+};
 class GuardiansTree
 {
 public:
+    vector<CombatHistory> combatHistory;
+
     GuardiansTree() : root(nullptr) {}
     vector<Guardian *> getGuardians()
     {
         return guardians;
     }
+    void addCombatHistory(const string &opponentName, bool victory)
+    {
+        CombatHistory history;
+        history.opponentName = opponentName;
+        history.victory = victory;
+        combatHistory.push_back(history);
+    }
+    void showCombatHistory(const string &name) const
+    {
+        cout << "--------------------------------------------------------------------" << endl;
+        cout << "Historial de Combates para " << name << ":" << endl;
+        for (const CombatHistory &history : combatHistory)
+        {
+            cout << "Oponente: " << history.opponentName << " - " << (history.victory ? "Victoria" : "Derrota") << endl;
+        }
+    }
+
     void insertGuardian(const string &name, const string &powerLevel, const string &mainMaster, const string &village)
     {
         Guardian *guardian = new Guardian;
@@ -45,7 +68,7 @@ public:
         if (root == nullptr)
         {
             root = guardian;
-            cout << "root" << endl;
+            // cout << "root" << endl;
         }
         else
         {
@@ -66,9 +89,11 @@ public:
             return;
         }
         string line;
-
+        bool Stormheartpresent = false;
+        int lineCount = 0;
         while (getline(file, line))
         {
+            lineCount++;
             istringstream iss(line);
             string name, mainMaster, village;
             string powerLevel = "0";
@@ -76,7 +101,32 @@ public:
             getline(iss, powerLevel, ',');
             getline(iss, mainMaster, ',');
             getline(iss, village);
+            if (name == "Stormheart")
+            {
+                Stormheartpresent = true;
+                mainMaster = "";
+            }
+            if (line.empty())
+            {
+                break; // Salir del bucle si la línea está vacía
+            }
+            // Validar si el guardián tiene información incompleta
+            if (name != "Stormheart")
+            {
+                if (name.empty() || mainMaster.empty() || village.empty() || powerLevel.empty())
+                {
+                    cerr << "Existe un guardián en la linea " << lineCount << " del archivo que no posee alguno de estos parametros (Nombre, NiveldePoder, Mainmaster,Villa): " << endl;
+                    cerr << "Porfavor corrija la linea corrospondiente de el archivo guardianes.csv" << endl;
+                    exit(0); // Saltar este guardián y pasar al siguiente registro
+                }
+            }
             insertGuardian(name, powerLevel, mainMaster, village);
+        }
+        if (!Stormheartpresent)
+        {
+            cerr << "Stormheart no está presente en el Archivo" << endl;
+            cerr << "Integrelo guardianes.csv" << endl;
+            exit(0);
         }
         file.close();
     }
@@ -95,7 +145,7 @@ public:
 
         // Actualizar el vector villages
         villages = loadedVillages;
-        imprimirVillas(villages, guardians);
+        // imprimirVillas(villages, guardians);
 
         file.close();
     }
@@ -223,12 +273,13 @@ public:
         }
     }
 
-    void travelBetweenVillages(const vector<Guardian *> &selectedApprentices)
+    void travelBetweenVillages(const vector<Guardian *> &selectedApprentice)
     {
         // Verificar si el vector de aprendices seleccionados esta vacío
-        if (selectedApprentices.empty())
+        if (selectedApprentice.empty())
         {
-            cout << "No se han seleccionado aprendices." << endl;
+            cout << "--------------------------------------------------------------------" << endl;
+            cout << "No se han seleccionado algun aprendiz." << endl;
             return;
         }
 
@@ -236,7 +287,7 @@ public:
         string currentVillage;
         string destinationVillage;
 
-        currentVillage = selectedApprentices[0]->Village;
+        currentVillage = selectedApprentice[0]->Village;
 
         if (currentVillage.empty())
         {
@@ -247,7 +298,7 @@ public:
         while (true)
         {
             cout << "------------------------------------------------------------" << endl;
-            cout << "Viajando con: " << selectedApprentices[0]->Name << "Poder:[" << selectedApprentices[0]->PowerLevel << "]" << endl;
+            cout << "Viajando con: " << selectedApprentice[0]->Name << " | Poder:[" << selectedApprentice[0]->PowerLevel << "] |" << endl;
             cout << "Viajando desde " << currentVillage << "..." << endl;
             cout << "------------------------------------------------------------" << endl;
             // Mostrar las aldeas adyacentes disponibles para viajar
@@ -259,25 +310,24 @@ public:
             {
                 cout << i + 1 << ". " << adjacentVillages[i] << endl;
             }
-                        cout <<"------------------------------------------------------------" << endl;
-            cout << "0. Volver a la aldea anterior" << endl;
-            cout << "-1. Realizar conexion de aldeas" << endl;
-
+            cout << "0. Realizar conexion de aldeas (Alquimia)" << endl;
+            cout << "-1. Mostrar Historial de Combate" << endl;
+            cout << "------------------------------------------------------------" << endl;
             // Solicitar la opcion al usuario
             int option;
+            int option1;
             cout << "Selecciona el numero de la aldea a la que deseas viajar: ";
             cin >> option;
 
             // Verificar la opcion seleccionada
             if (option == 0)
             {
-                cout << "Regresando a la aldea anterior..." << endl;
-                return;
+                alquimistas(currentVillage, selectedApprentice[0]);
+                continue;
             }
             else if (option == -1)
             {
-                alquimistas(currentVillage, selectedApprentices[0]);
-                continue;
+                showCombatHistory(selectedApprentice[0]->Name);
             }
             else if (option >= 1 && option <= static_cast<int>(adjacentVillages.size()))
             {
@@ -285,7 +335,7 @@ public:
                 if (destinationVillage == "Tesla")
                 {
                     bool hasEnoughPower = true;
-                    for (const Guardian *guardian : selectedApprentices)
+                    for (const Guardian *guardian : selectedApprentice)
                     {
                         if (guardian->PowerLevel < 90)
                         {
@@ -302,18 +352,26 @@ public:
                 cout << "Viajando desde " << currentVillage << " hacia " << destinationVillage << "..." << endl;
 
                 // Actualizar los puntos de poder por llegar a la aldea para cada aprendiz
-                for (Guardian *guardian : selectedApprentices)
+                for (Guardian *guardian : selectedApprentice)
                 {
+                    cout << "Has obtenido 1 punto por visitar esta aldea" << endl;
                     guardian->PowerLevel += 1;
                 }
 
                 // Mostrar los oponentes en la aldea y realizar enfrentamientos para cada aprendiz
-                for (Guardian *guardian : selectedApprentices)
+                for (Guardian *guardian : selectedApprentice)
                 {
                     vector<Guardian *> opponents = getOpponents(destinationVillage);
                     if (!opponents.empty())
                     {
-                        encounterOpponents(guardian, opponents);
+                        cout << "Guardianes presentes " << endl;
+                        cout << "Quieres enfrentarlos| 1. Si | 2. No" << endl;
+                        cout << "Ingrese opcion: ";
+                        cin >> option1;
+                        if (option1 == 1)
+                        {
+                            encounterOpponents(guardian, opponents);
+                        }
                     }
                 }
 
@@ -384,14 +442,16 @@ public:
         if (diceRoll <= winProbability)
         {
             cout << "¡Has ganado el enfrentamiento! Obtienes ";
+            addCombatHistory(opponent->Name, true);
             if (opponent->Name == "Stormheart")
             {
-                cout << "2 puntos y has derrotado a Stormheart. ¡Fin del juego!" << endl;
+                cout << "Has derrotado a Stormheart. Fin del juego!" << endl;
                 selectedGuardian->PowerLevel += 2;
                 // Agregar la logica para finalizar el juego, por ejemplo:
-                cout << "¡Felicidades! Has completado el juego." << endl;
-                cout << "¡Eres un verdadero Guardian y has protegido todas las aldeas!" << endl;
+                cout << "Felicidades! Has completado el juego." << endl;
+                cout << "Has completado la travesia del guardian!" << endl;
                 cout << "Gracias por jugar." << endl;
+                showCombatHistory(selectedGuardian->Name);
                 exit(0); // Terminar la ejecucion del programa
             }
             else if (opponent->Name == selectedGuardian->MainMaster)
@@ -408,6 +468,7 @@ public:
         else
         {
             cout << "Has perdido el enfrentamiento. No obtienes puntos." << endl;
+            addCombatHistory(opponent->Name, false);
         }
     }
     string createGuardian()
@@ -415,8 +476,8 @@ public:
         string name;
         string village;
 
-        cout << "Ingrese el nombre del nuevo guardian: ";
-        cin.ignore();
+        cout << "Ingrese el nombre del nuevo guardian:";
+
         getline(cin, name);
 
         cout << "Lista de aldeas disponibles:" << endl;
@@ -450,7 +511,7 @@ public:
 
         // Agregar el nuevo guardian al arbol de guardianes
         guardians.push_back(newGuardian);
-
+        cout << "--------------------------------------------------------------------" << endl;
         cout << "El guardian " << name << " ha sido creado exitosamente." << endl;
         return newGuardian->Name;
     }
@@ -458,6 +519,7 @@ public:
 private:
     vector<Guardian *> guardians;
     vector<Village *> villages;
+
     Guardian *root;
 
     Guardian *findGuardian(const string &name)
@@ -513,6 +575,7 @@ private:
             return updatedVillages;
         }
         string line;
+        bool teslaVillagePresent = false;
 
         while (getline(file, line))
         {
@@ -571,8 +634,21 @@ private:
                 // Agregar la conexion en sentido contrario (vecino a aldea)
                 newNeighbor->villasConectadas.push_back(village);
             }
+            // Verificar si la villa Tesla está presente
+            if (villageName == "Tesla" || neighborCity == "Tesla")
+            {
+                teslaVillagePresent = true;
+            }
         }
         file.close();
+
+        if (!teslaVillagePresent)
+        {
+            cerr << "La villa Tesla no esta presente en el archivo. El programa no puede continuar ejecutandose." << endl;
+            cerr << "Integrelo al archivo villas.csv" << endl;
+            exit(0);
+            updatedVillages.clear(); // Limpiar el vector de villas actualizadas
+        }
 
         return updatedVillages;
     }
@@ -752,7 +828,7 @@ int main()
     guardians.loadGuardiansFromFile("guardianes.csv");
 
     // Mostrar los guardianes cargados
-    guardians.printGuardians();
+    // guardians.printGuardians();
 
     // Cargar villas desde un archivo y actualizar los main master de los guardianes
     guardians.loadVillagesFromFile("villas.csv");
@@ -762,7 +838,10 @@ int main()
     do
     {
         // Mostrar el menu
-        cout << "----- Menu Principal -----" << endl;
+        cout << "--------------------------------------------------------------------" << endl;
+        cout << "-------------------------- |The Guardian Journey |------------------" << endl;
+        cout << "--------------------------------------------------------------------" << endl;
+        cout << "-----| Menu Principal| -----" << endl;
         cout << "1. Seleccionar aprendiz" << endl;
         cout << "2. Mostrar guardianes y aldeas" << endl;
         cout << "3. Empezar viaje" << endl;
