@@ -31,6 +31,7 @@ A continuación, se mencionan algunos detalles importantes de ciertas funciones 
 `encounterOpponents()`: Esta función se utiliza para simular un encuentro entre el guardián seleccionado y una lista de oponentes. Toma como argumentos un puntero al guardián seleccionado y un vector de punteros a los oponentes. Durante el encuentro, se comparan los niveles de poder de los participantes y se determina el resultado del enfrentamiento. Esta función es crucial para el desarrollo de la trama y las interacciones entre los guardianes.
 
 `cargarVillas()`: Esta función se utiliza para cargar las aldeas desde un archivo de datos. Toma como argumento el nombre del archivo y devuelve un vector de punteros a las aldeas cargadas. La función lee el archivo, extrae la información de cada aldea (nombre, maestro principal, aldeas conectadas, etc.) y crea objetos de la clase Village correspondientes. Luego, los objetos de aldea se almacenan en un vector y se devuelven al programa principal para su uso.
+`showCombatHistory()`: muestra el historial de combates del jugador, incluyendo las victorias y derrotas, y contra quién se produjeron. Proporciona información relevante sobre las batallas anteriores del jugador.
 
 Estas son solo algunas de las funciones destacadas del programa. Se recomienda revisar el código fuente completo para obtener una comprensión detallada de todas las funcionalidades implementadas.
 
