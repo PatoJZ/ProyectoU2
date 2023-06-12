@@ -7,7 +7,7 @@ https://drive.google.com/file/d/1sODQ3jcMkcdt-3rQcpHy3xAW-4bCGWtU/view?usp=shari
 
 ## Conceptos principales
 ### Guardianes
- Son personajes con habilidades especiales y un nivel de poder. Pueden ser seleccionados, asignados a aldeas y enfrentar oponentes.
+ Son personajes con un nivel de poder. Pueden ser seleccionados, asignados a aldeas y enfrentar oponentes.
 ### Aldeas
  Son ubicaciones en el mundo del programa. Cada aldea tiene un nombre, un maestro principal y una lista de guardianes asignados a ella.
 Oponentes: Son guardianes enemigos que pueden encontrarse en una aldea y desafiar a los guardianes seleccionados por el usuario.
@@ -72,7 +72,7 @@ Este programa simula un mundo de guardianes y aldeas, donde los jugadores pueden
    - Utiliza la opción "Viajar entre aldeas" en el menú principal.
    - Se mostrará una lista de aldeas disponibles para viajar.
    - Selecciona la aldea a la que deseas viajar y sigue las indicaciones del programa.
-   - Durante el viaje, podrías encontrar oponentes en la aldea de destino. Prepárate para enfrentarlos y demostrar tu poder.
+   - Durante el viaje, podrías encontrar oponentes en la aldea de destino. Prepárate para enfrentarlos.
 
 3. Enfrentamientos con oponentes:
    - Los oponentes pueden apareceran durante tus viajes o en las aldeas que visites, se va a sugerir aquel de menor nivel para que te enfrentes.
