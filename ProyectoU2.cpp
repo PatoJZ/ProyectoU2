@@ -1,3 +1,8 @@
+//Patricio Arturo Jiménez Alarcón
+//Universidad De Talca
+//Rut 21357776-k
+//N° de Matricula 2022479007
+//Algoritmos y Estructuras de Datos 2023-1
 #include <iostream>
 #include <fstream>
 #include <sstream>
